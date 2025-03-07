@@ -29,8 +29,14 @@ body {
     display: block;
     font-size: 3rem;
     font-weight: 600;
+    margin-bottom: 20px;
 }
 
 .menu-item p {
     margin-top: -10px;
+}
+
+.menu-item h3 {
+    font-size: 1.5rem;
+    margin: 15px 0;
 }
