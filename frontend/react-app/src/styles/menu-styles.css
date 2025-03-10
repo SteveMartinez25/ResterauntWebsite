@@ -1,0 +1,22 @@
+body {
+    background-color: #fcfada;
+}
+
+.menu-container {
+    width: 95%;
+    margin: 0 auto;
+}
+
+.menu-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 1em;
+    max-width: 100%;
+}
+
+.section-title {
+    display: block;
+    font-size: 3rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}

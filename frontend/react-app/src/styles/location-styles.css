@@ -1,0 +1,40 @@
+body {
+    background-color: #fcfada;
+    margin: 0;
+}
+  
+.locations-welcome {
+    text-align: center;
+    margin: 2rem 0;
+}
+  
+.location-section {
+    padding: 1rem;
+}
+  
+.location-main-container {
+    width: 95%;
+    margin: 0 auto;
+}
+  
+/* Container that holds all the location cards */
+.cards-container {
+    display: flex;           /* use flex layout */
+    flex-wrap: wrap;         /* wrap cards to new line if not enough space */
+    gap: 1rem;               /* spacing between cards */
+    justify-content: center; /* center them horizontally */
+    margin-bottom: 2rem;     /* spacing below the cards before the map */
+}
+  
+  /* Map container styling */
+.map-container {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+  
+.map {
+    width: 100%;
+    height: 500px;
+    border: none;
+    border-radius: 10px;
+}

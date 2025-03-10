@@ -1,0 +1,19 @@
+.menu-item {
+    width: 380px;
+}
+
+.food-pic {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+}
+
+.menu-item p {
+    margin-top: -10px;
+}
+
+.menu-item h3 {
+    font-size: 1.5rem;
+    margin: 15px 0;
+}

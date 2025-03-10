@@ -1,0 +1,34 @@
+/* Individual card styling */
+.location-card {
+    background-color: #f0ae1c;
+    border-radius: 20px;
+    width: 300px;            /* fixed width for a consistent card size */
+    padding: 1.5rem;         /* some padding for internal spacing */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    color: #fff;             /* text in white for contrast against yellow */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+  
+.location-card h2 {
+    margin-top: 0;
+    font-size: 1.3rem;
+}
+  
+.location-card h3 {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+  
+  /* Tweak paragraphs inside the card */
+.location-card p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.location-card:hover {
+    /* Slightly enlarge the card */
+    transform: scale(1.03);
+    /* Increase the box shadow for a more pronounced 'lifted' look */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
