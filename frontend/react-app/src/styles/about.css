@@ -1,0 +1,72 @@
+/* src/pages/About.css */
+
+/* Hero */
+.about-hero {
+  position: relative;
+  padding: 88px 0 56px;
+  color: #fff;
+  text-align: center;
+  background-image: url("https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1600&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+}
+.about-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,.55),
+    rgba(0,0,0,.35),
+    rgba(0,0,0,.65)
+  );
+}
+.about-hero-inner { position: relative; z-index: 1; }
+.about-hero-title {
+  font-size: clamp(44px, 8vw, 72px);
+  line-height: 1.05;
+  margin: 8px 0 6px;
+  letter-spacing: -0.5px;
+}
+.about-hero-subtitle {
+  max-width: 720px;
+  margin: 6px auto 14px;
+  color: #f3f3f3;
+}
+
+/* Values grid spacing tweaks */
+.about-values { margin-top: 14px; }
+
+/* Stats */
+.about-stats {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  align-items: center;
+  justify-items: center;
+}
+.stat { text-align: center; }
+.stat-number {
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+/* FAQ */
+.about-faq {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+.about-faq details {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.about-faq summary {
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+.about-faq summary::-webkit-details-marker { display: none; }
+.about-faq p { margin: 8px 0 0; }

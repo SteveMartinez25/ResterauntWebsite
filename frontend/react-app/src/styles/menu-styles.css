@@ -1,22 +1,51 @@
-body {
-    background-color: #fcfada;
+/* src/pages/Menu.css */
+
+/* Small hero that matches Home vibe (but simpler) */
+.menu-hero {
+  background: #fafafa;
+  border-bottom: 1px solid #eee;
+  padding: 72px 0 40px;
+  text-align: center;
+}
+.menu-hero-title {
+  font-size: clamp(44px, 8vw, 80px);
+  line-height: 1.05;
+  margin: 8px 0 6px;
+  letter-spacing: -0.5px;
+}
+.menu-hero-subtitle {
+  max-width: 720px;
+  margin: 6px auto 14px;
+  color: #5f6368;
 }
 
-.menu-container {
-    width: 95%;
-    margin: 0 auto;
+/* Sticky top category tabs */
+.menu-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid #eee;
 }
-
-.menu-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-    gap: 1em;
-    max-width: 100%;
+.tabs-inner {
+  display: flex;
+  gap: 14px;
+  padding: 10px 0;
 }
+.tab {
+  text-decoration: none;
+  color: #1f1f1f;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 10px;
+  transition: background .2s ease;
+}
+.tab:hover { background: #f4f4f4; }
+.tab:focus { outline: 2px solid #111; outline-offset: 2px; }
 
-.section-title {
-    display: block;
-    font-size: 3rem;
-    font-weight: 600;
-    margin-bottom: 20px;
+/* Minor responsive tweak */
+@media (max-width: 640px) {
+  .tabs-inner { overflow-x: auto; padding-bottom: 12px; }
+  .tab { white-space: nowrap; }
 }

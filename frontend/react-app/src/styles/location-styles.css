@@ -1,40 +1,56 @@
-body {
-    background-color: #fcfada;
-    margin: 0;
+/* Mini hero */
+.locations-hero {
+  background: #fafafa;
+  border-bottom: 1px solid #eee;
+  padding: 64px 0 36px;
+  text-align: center;
 }
-  
-.locations-welcome {
-    text-align: center;
-    margin: 2rem 0;
+.locations-hero-title {
+  font-size: clamp(44px, 8vw, 72px);
+  line-height: 1.05;
+  margin: 8px 0 6px;
+  letter-spacing: -0.5px;
 }
-  
-.location-section {
-    padding: 1rem;
+.locations-hero-subtitle {
+  max-width: 720px;
+  margin: 6px auto 0;
+  color: #5f6368;
 }
-  
-.location-main-container {
-    width: 95%;
-    margin: 0 auto;
+
+/* Yellow variant of the shared card */
+.location-card {
+  background: #f0ae1c;
+  border: 1px solid #e29e0e;
+  color: #fff;
 }
-  
-/* Container that holds all the location cards */
-.cards-container {
-    display: flex;           /* use flex layout */
-    flex-wrap: wrap;         /* wrap cards to new line if not enough space */
-    gap: 1rem;               /* spacing between cards */
-    justify-content: center; /* center them horizontally */
-    margin-bottom: 2rem;     /* spacing below the cards before the map */
+.location-card .card-body { gap: 8px; }
+.location-card .card-title.light { color: #fff; }
+.location-row { margin: 0; color: rgba(255,255,255,0.92); }
+.location-row .label { font-weight: 700; color: #fff; }
+
+/* Day badge */
+.day-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.28);
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: #fff;
 }
-  
-  /* Map container styling */
-.map-container {
-    width: 100%;
-    margin-bottom: 2rem;
+
+/* Light button for yellow cards */
+.btn-light {
+  background: rgba(255,255,255,0.92);
+  color: #1f1f1f;
 }
-  
+
+/* Map */
+.map-container { width: 100%; }
 .map {
-    width: 100%;
-    height: 500px;
-    border: none;
-    border-radius: 10px;
+  width: 100%;
+  height: 520px;
+  border: 0;
+  border-radius: 12px;
 }

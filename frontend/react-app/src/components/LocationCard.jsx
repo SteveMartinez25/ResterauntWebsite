@@ -1,15 +1,32 @@
-import React from 'react';
-import '../styles/location-card.css';
+import React from "react";
+
+function googleMapsLink(addr) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
+}
 
 function LocationCard({ title, day, hours, offering, address }) {
   return (
-    <div className="location-card">
-      <h2>{title}</h2>
-      <h3>{day}</h3>
-      <p><strong>Hours: </strong>{hours}</p>
-      <p><strong>Offering: </strong>{offering}</p>
-      <p><strong>Address: </strong>{address}</p>
-    </div>
+    <article className="card location-card">
+      <div className="card-body">
+        <div className="day-badge">{day}</div>
+        <h3 className="card-title light">{title}</h3>
+
+        <p className="location-row"><span className="label">Hours:</span> {hours}</p>
+        <p className="location-row"><span className="label">Offering:</span> {offering}</p>
+        <p className="location-row"><span className="label">Address:</span> {address}</p>
+
+        <div className="row">
+          <a
+            className="btn btn-light"
+            href={googleMapsLink(address)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Get Directions
+          </a>
+        </div>
+      </div>
+    </article>
   );
 }
 
