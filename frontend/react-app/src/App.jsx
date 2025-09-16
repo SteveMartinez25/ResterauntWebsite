@@ -1,29 +1,30 @@
-import './App.css';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import NavBar from './components/NavBar.jsx';
-import Footer from './components/Footer.jsx';
-import Home from './pages/Home.jsx'
-import Menu from './pages/Menu.jsx';
-import Locations from './pages/Locations.jsx';
-import About from './pages/About.jsx';
+// src/App.jsx
+import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { CartProvider } from "./pages/CartContext.jsx";  // ← correct path
 
-function App() {
+import NavBar from "./components/NavBar.jsx";
+import Footer from "./components/Footer.jsx";
+import Home from "./pages/Home.jsx";
+import Menu from "./pages/Menu.jsx";
+import Locations from "./pages/Locations.jsx";
+import About from "./pages/About.jsx";
+import Order from "./pages/Order.jsx";
+
+export default function App() {
   return (
-    <>
-      <Router>
+    <CartProvider>
+      <BrowserRouter>
         <NavBar />
-        <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/menu" element={<Menu />} />
-            <Route path="/locations" element={<Locations />} />
-            <Route path="/about" element={<About />} />
-          </Routes>
-        </main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/locations" element={<Locations />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/order" element={<Order />} />
+        </Routes>
         <Footer />
-      </Router>
-    </>
+      </BrowserRouter>
+    </CartProvider>
   );
 }
-
-export default App;
