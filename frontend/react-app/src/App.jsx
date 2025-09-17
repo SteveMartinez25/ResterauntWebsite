@@ -10,6 +10,8 @@ import Menu from "./pages/Menu.jsx";
 import Locations from "./pages/Locations.jsx";
 import About from "./pages/About.jsx";
 import Order from "./pages/Order.jsx";
+import Checkout from "./pages/Checkout.jsx";
+import OrderConfirmation from "./pages/OrderConfirmation.jsx";
 
 export default function App() {
   return (
@@ -22,6 +24,8 @@ export default function App() {
           <Route path="/locations" element={<Locations />} />
           <Route path="/about" element={<About />} />
           <Route path="/order" element={<Order />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order/confirmation" element={<OrderConfirmation />} />
         </Routes>
         <Footer />
       </BrowserRouter>

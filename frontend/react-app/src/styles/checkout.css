@@ -1,0 +1,57 @@
+.checkout .order-hero { padding: 48px 0 28px; }
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr;
+  gap: 16px;
+}
+.panel {
+  border: 1px solid #e8e8e8;
+  border-radius: 16px;
+  background: #fff;
+  padding: 16px;
+}
+.panel h3 { margin: 0 0 12px; }
+
+.form-row { display: grid; gap: 8px; margin-bottom: 10px; }
+.form-row.two { grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row input { width: 100%; border: 1px solid #ddd; border-radius: 10px; padding: 10px 12px; }
+.err { color: #b33; font-size: 13px; }
+
+.pickup-box { display: grid; gap: 8px; }
+.radio { display: flex; align-items: center; gap: 8px; }
+.slot-select { padding: 10px 12px; border: 1px solid #ddd; border-radius: 10px; width: 100%; }
+
+.tips { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.chip { border: 1px solid #ddd; border-radius: 999px; padding: 6px 12px; background: #fff; cursor: pointer; }
+.chip.active { border-color: #111; box-shadow: 0 0 0 2px #111 inset; }
+.tip-input { width: 90px; border: 1px solid #ddd; border-radius: 10px; padding: 6px 10px; }
+
+.summary-list { display: grid; }
+.summary-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto auto;
+  gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid #f1f1f1;
+}
+.summary-item:first-child { border-top: 0; }
+.summary-item img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; }
+.summary-item .title { font-weight: 700; }
+.summary-item .meta { color: #5f6368; font-size: 13px; }
+
+.qty { display: grid; grid-auto-flow: column; gap: 6px; align-items: center; }
+.qty button { width: 28px; height: 28px; border: 1px solid #ddd; border-radius: 6px; background: #f8f8f8; cursor: pointer; }
+.qty input { width: 48px; height: 28px; text-align: center; border: 1px solid #ddd; border-radius: 6px; }
+
+.right { text-align: right; }
+.right .line { font-weight: 700; }
+.link.danger { border: none; background: none; color: #b33; text-decoration: underline; cursor: pointer; }
+
+.totals { border-top: 1px solid #eee; margin-top: 12px; padding-top: 12px; }
+.totals .row { display: flex; justify-content: space-between; padding: 4px 0; }
+.totals .row.grand { font-size: 1.1rem; font-weight: 700; }
+
+.checkout-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.checkout-actions .spacer { flex: 1 1 auto; }
+
+@media (max-width: 900px) {
+  .checkout-grid { grid-template-columns: 1fr; }
+}

@@ -3,6 +3,7 @@ import "../App.css";
 import "../styles/home.css";
 import "../styles/order.css";
 import { useCart } from "./CartContext.jsx";
+import { useNavigate } from "react-router-dom";
 
 /* ---- Market schedule (0=Sun … 6=Sat) ---- */
 const MARKETS = [
@@ -61,6 +62,7 @@ const LEMONADES = [
 
 /* --- Cart summary (top of page) --- */
 function CartSummary() {
+  const navigate = useNavigate();
   const { items, setQty, removeItem, subtotal, clear } = useCart();
 
   const sideNames = (ids=[]) =>
@@ -117,7 +119,7 @@ function CartSummary() {
             <div className="spacer" />
             <div className="muted">Subtotal</div>
             <div className="sum">${subtotal.toFixed(2)}</div>
-            <button className="btn btn-primary">Checkout (soon)</button>
+            <button className="btn btn-primary" onClick={() => navigate("/checkout")}>Checkout</button>
           </div>
         </>
       )}
