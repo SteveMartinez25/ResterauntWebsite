@@ -1,72 +1,43 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "../App.css";
 import "../styles/home.css";
 import "../styles/order.css";
 import { useCart } from "./CartContext.jsx";
 import { useNavigate } from "react-router-dom";
 
-/* ---- Market schedule (0=Sun … 6=Sat) ---- */
-const MARKETS = [
+/* ---------- tiny fallback schedule (used only if /api/markets/next returns 404) ---------- */
+const FALLBACK_MARKETS = [
   { id: "westchester", name: "Westchester Farmer's Market", day: 0, start: "09:00", end: "13:30" }, // Sun
   { id: "manhattan",   name: "Manhattan Beach Farmer's Market", day: 2, start: "11:00", end: "15:00" }, // Tue
   { id: "southpas",    name: "South Pasadena Farmer's Market",  day: 4, start: "15:00", end: "19:00" }, // Thu
   { id: "torrance",    name: "Torrance Certified Farmer's Market", day: 6, start: "08:00", end: "13:00" }, // Sat
 ];
-
-function setTime(date, hhmm) { const [h, m] = hhmm.split(":").map(Number); const d = new Date(date); d.setHours(h, m, 0, 0); return d; }
-function nextMarketNow(now = new Date()) {
-  const candidates = MARKETS.map(m => {
+function setTime(date, hhmm){ const [h,m]=hhmm.split(":").map(Number); const d=new Date(date); d.setHours(h,m,0,0); return d; }
+function nextMarketFallback(now=new Date()){
+  const c = FALLBACK_MARKETS.map(m=>{
     const d = new Date(now);
     const delta = (m.day - d.getDay() + 7) % 7;
     d.setDate(d.getDate() + delta);
     let start = setTime(d, m.start);
     let end   = setTime(d, m.end);
-    if (delta === 0 && end <= now) { d.setDate(d.getDate() + 7); start = setTime(d, m.start); end = setTime(d, m.end); }
+    if (delta===0 && end <= now){ d.setDate(d.getDate()+7); start=setTime(d,m.start); end=setTime(d,m.end); }
     return { ...m, date: d, start, end };
-  }).filter(c => c.end > now);
-  candidates.sort((a,b)=>a.start-b.start);
-  return candidates[0] || null;
+  }).filter(x=>x.end>now).sort((a,b)=>a.start-b.start)[0];
+  return c ? { id:c.id, name:c.name, date:c.date, start:c.start, end:c.end } : null;
 }
-const fmtDate = d => d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-function fmtTime(val){
-  let d;
-  if (val instanceof Date) d = val;
-  else if (typeof val === "string") { const [hh,mm]=val.split(":").map(Number); d=new Date(); d.setHours(hh,mm,0,0); }
-  else return "";
+const fmtDate = d => d?.toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" }) || "";
+const fmtTime = val => {
+  const d = (val instanceof Date) ? val : new Date(val);
   return d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
-}
+};
 
-/* Data */
-const PUPUSAS = [
-  { id:"p-cheese",      title:"Cheese Pupusa",              img:"https://images.unsplash.com/photo-1551218808-94e220e084d2?q=80&w=1200&auto=format&fit=crop", price:4.50, badge:"Bestseller", desc:"Hand-pressed masa with melty queso." },
-  { id:"p-bean-cheese", title:"Bean & Cheese Pupusa",       img:"https://images.unsplash.com/photo-1606756790138-261d2b21cd1b?q=80&w=1200&auto=format&fit=crop", price:4.75, badge:"Vegetarian", desc:"Creamy refried beans & queso." },
-  { id:"p-pork-bean",   title:"Pork, Bean & Cheese Pupusa", img:"https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200&auto=format&fit=crop", price:5.25, desc:"Slow-braised pork, beans & cheese." },
-  { id:"p-veg-cheese",  title:"Vegetables & Cheese Pupusa", img:"https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1200&auto=format&fit=crop", price:4.95, desc:"Seasonal veggies with queso." },
-  { id:"p-loroco",      title:"Loroco & Cheese Pupusa",     img:"https://images.unsplash.com/photo-1546549039-b3429f7df3fb?q=80&w=1200&auto=format&fit=crop", price:5.25, badge:"Signature", desc:"Floral loroco buds & cheese." },
-  { id:"p-pork-cheese", title:"Pork & Cheese Pupusa",       img:"https://images.unsplash.com/photo-1604908176997-43162f8d7ecd?q=80&w=1200&auto=format&fit=crop", price:5.00, desc:"Savory pork with queso." },
-];
-
-const SIDES = [
-  { id:"s-curtido", title:"Curtido", img:"https://images.unsplash.com/photo-1505577058444-a3dab90d4253?q=80&w=400&auto=format&fit=crop" },
-  { id:"s-salsa",   title:"Salsa", img:"https://images.unsplash.com/photo-1552332386-f8dd00dc2f85?q=80&w=400&auto=format&fit=crop" },
-  { id:"s-guac",    title:"Creamy Guacamole", img:"https://images.unsplash.com/photo-1496116218417-1a781b1c416c?q=80&w=400&auto=format&fit=crop" },
-  { id:"s-sour",    title:"Sour Cream", img:"https://images.unsplash.com/photo-1604908554269-9eacb5f3d140?q=80&w=400&auto=format&fit=crop" },
-];
-
-const LEMONADES = [
-  { id:"d-regular",   title:"Regular Lemonade",   img:"https://images.unsplash.com/photo-1556679343-c7306c2d037f?q=80&w=1200&auto=format&fit=crop", price:4.00, badge:"Most Loved", desc:"Fresh-squeezed classic." },
-  { id:"d-strawberry",title:"Strawberry Lemonade",img:"https://images.unsplash.com/photo-1505935428862-770b6f24f629?q=80&w=1200&auto=format&fit=crop", price:4.50, desc:"Real strawberries, made daily." },
-  { id:"d-mango",     title:"Mango Lemonade",     img:"https://images.unsplash.com/photo-1497534446932-c925b458314e?q=80&w=1200&auto=format&fit=crop", price:4.50, desc:"Sunny & tropical." },
-  { id:"d-cucumber",  title:"Cucumber Lemonade",  img:"https://images.unsplash.com/photo-1497534446932-c925b458314e?q=80&w=1200&auto=format&fit=crop", price:4.50, desc:"Cool & refreshing." },
-];
-
-/* --- Cart summary (top of page) --- */
-function CartSummary() {
+/* ---------------------- Cart summary (uses live sides for names) ---------------------- */
+function CartSummary({ sides }) {
   const navigate = useNavigate();
   const { items, setQty, removeItem, subtotal, clear } = useCart();
 
   const sideNames = (ids=[]) =>
-    ids.map(id => SIDES.find(s => s.id === id)?.title || id).join(", ");
+    ids.map(id => sides.find(s => s.id === id)?.title || id).join(", ");
 
   return (
     <div className="cart-card">
@@ -76,9 +47,7 @@ function CartSummary() {
       </div>
 
       {items.length === 0 ? (
-        <div className="cart-empty">
-          Your cart is empty — add items below.
-        </div>
+        <div className="cart-empty">Your cart is empty — add items below.</div>
       ) : (
         <>
           <div className="cart-list">
@@ -89,7 +58,7 @@ function CartSummary() {
                   <div className="title">{it.title}</div>
                   {it.meta?.kind === "pupusa" && (
                     <div className="meta">
-                      {it.meta.sides?.length ? `Sides: ${sideNames(it.meta.sides)}` : "No sides"} 
+                      {it.meta.sides?.length ? `Sides: ${sideNames(it.meta.sides)}` : "No sides"}
                       {it.meta?.notes ? ` • “${it.meta.notes}”` : ""}
                     </div>
                   )}
@@ -127,7 +96,7 @@ function CartSummary() {
   );
 }
 
-/* --- Pupusa card with sides inside --- */
+/* ---------------------- Pupusa card (unchanged UI) ---------------------- */
 function PupusaCard({ item, market, onAdd, sides }) {
   const [selectedSides, setSelectedSides] = React.useState([]);
   const [qty, setQty] = React.useState(1);
@@ -161,7 +130,7 @@ function PupusaCard({ item, market, onAdd, sides }) {
                   checked={selectedSides.includes(s.id)}
                   onChange={() => toggleSide(s.id)}
                 />
-                <img src={s.img} alt={s.title} />
+                {s.img ? <img src={s.img} alt={s.title} /> : <div className="side-thumb-fallback" />}
                 <span>{s.title}</span>
               </label>
             ))}
@@ -177,7 +146,6 @@ function PupusaCard({ item, market, onAdd, sides }) {
           />
         </div>
 
-        {/* footer row – now wrap-safe and clipped inside card */}
         <div className="card-row">
           <span className="price">${item.price.toFixed(2)}</span>
           <div className="qty">
@@ -185,10 +153,7 @@ function PupusaCard({ item, market, onAdd, sides }) {
             <input type="number" min="1" value={qty} onChange={(e)=>setQty(Math.max(1, parseInt(e.target.value||1,10)))} />
             <button onClick={() => setQty(qty + 1)} aria-label="Increase">+</button>
           </div>
-          <button
-            className="btn btn-primary"
-            onClick={() => onAdd(item, qty, selectedSides, notes)}
-          >
+          <button className="btn btn-primary" onClick={() => onAdd(item, qty, selectedSides, notes)}>
             Add to Cart • ${(item.price * qty).toFixed(2)}
           </button>
         </div>
@@ -201,9 +166,73 @@ function PupusaCard({ item, market, onAdd, sides }) {
   );
 }
 
+/* ----------------------------------- Page ----------------------------------- */
 export default function Order() {
-  const market = useMemo(() => nextMarketNow(new Date()), []);
   const { addItem } = useCart();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState(null);
+
+  const [market, setMarket] = useState(null);       // { id, name, date, start, end }
+  const [pupusas, setPupusas] = useState([]);       // mapped from /api/menu
+  const [drinks, setDrinks]   = useState([]);
+  const [sides, setSides]     = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        setLoading(true);
+
+        // load menu (items + sides)
+        const menuRes = await fetch("/api/menu");
+        const menu = await menuRes.json();
+
+        const mapItem = (i) => ({
+          id: i.id,
+          title: i.title,
+          img: i.imageUrl || "",           // backend field is imageUrl
+          price: (i.priceCents ?? 0) / 100,
+          desc: i.desc || "",
+        });
+
+        const pup = (menu.items || []).filter(i => i.type === "PUPUSA").map(mapItem);
+        const drk = (menu.items || []).filter(i => i.type === "DRINK").map(mapItem);
+        const sds = (menu.sides || []).map(s => ({ id: s.id, title: s.title, img: s.imageUrl || "" }));
+
+        // load next market (API). If 404, fallback to weekly schedule
+        const mRes = await fetch("/api/markets/next");
+        let mkt = null;
+        if (mRes.ok) {
+          const m = await mRes.json();
+          mkt = {
+            id: m.marketId || m.id,
+            name: m.name,
+            date: new Date(m.dateISO || m.startISO),
+            start: new Date(m.startISO),
+            end: new Date(m.endISO),
+          };
+        } else if (mRes.status === 404) {
+          mkt = nextMarketFallback(new Date());
+        }
+
+        if (mounted) {
+          setPupusas(pup);
+          setDrinks(drk);
+          setSides(sds);
+          setMarket(mkt);
+          setError(null);
+        }
+      } catch (e) {
+        console.error(e);
+        if (mounted) setError("Could not load menu/market");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   function addPupusa(item, qty, selectedSides, notes) {
     if (!market) return;
@@ -242,13 +271,28 @@ export default function Order() {
     }, 1);
   }
 
+  if (loading) {
+    return (
+      <main className="order-next">
+        <section className="order-hero">
+          <div className="container center">
+            <h1 className="order-hero-title">Order</h1>
+            <p className="order-hero-subtitle">Loading menu…</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   if (!market) {
     return (
       <main className="order-next">
         <section className="order-hero">
           <div className="container center">
             <h1 className="order-hero-title">Order</h1>
-            <p className="order-hero-subtitle">Online ordering is closed. See <a href="/locations">Locations</a>.</p>
+            <p className="order-hero-subtitle">
+              Online ordering is closed. See <a href="/locations">Locations</a>.
+            </p>
           </div>
         </section>
       </main>
@@ -271,7 +315,7 @@ export default function Order() {
       {/* CART (top) */}
       <section className="section">
         <div className="container">
-          <CartSummary />
+          <CartSummary sides={sides} />
         </div>
       </section>
 
@@ -283,12 +327,12 @@ export default function Order() {
             <div className="muted">Pick a pupusa and choose up to two sides.</div>
           </div>
           <div className="grid grid-cards">
-            {PUPUSAS.map((item) => (
+            {pupusas.map((item) => (
               <PupusaCard
                 key={item.id}
                 item={item}
                 market={market}
-                sides={SIDES}
+                sides={sides}
                 onAdd={addPupusa}
               />
             ))}
@@ -305,7 +349,7 @@ export default function Order() {
           </div>
 
           <div className="grid grid-cards">
-            {LEMONADES.map(drink => (
+            {drinks.map(drink => (
               <article key={drink.id} className="card">
                 <div className="card-media media-16x11">
                   <img src={drink.img} alt={drink.title} />
