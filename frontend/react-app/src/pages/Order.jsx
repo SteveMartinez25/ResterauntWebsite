@@ -5,6 +5,8 @@ import "../styles/order.css";
 import { useCart } from "./CartContext.jsx";
 import { useNavigate } from "react-router-dom";
 
+const MAX_SIDES = 4;
+
 /* ---------- tiny fallback schedule (used only if /api/markets/next returns 404) ---------- */
 const FALLBACK_MARKETS = [
   { id: "westchester", name: "Westchester Farmer's Market", day: 0, start: "09:00", end: "13:30" }, // Sun
@@ -104,7 +106,7 @@ function PupusaCard({ item, market, onAdd, sides }) {
 
   function toggleSide(id) {
     setSelectedSides(prev =>
-      prev.includes(id) ? prev.filter(s => s !== id) : (prev.length < 2 ? [...prev, id] : prev)
+      prev.includes(id) ? prev.filter(s => s !== id) : (prev.length < MAX_SIDES ? [...prev, id] : prev)
     );
   }
 
@@ -120,21 +122,29 @@ function PupusaCard({ item, market, onAdd, sides }) {
 
         <div className="builder-group">
           <div className="builder-label">
-            Choose up to 2 sides <span className="muted">({selectedSides.length}/2)</span>
+             Choose up to {MAX_SIDES} sides <span className="muted">({selectedSides.length}/{MAX_SIDES})</span>
           </div>
           <div className="side-options">
-            {sides.map(s => (
-              <label key={s.id} className={`side-option ${selectedSides.includes(s.id) ? "active" : ""}`}>
+          {sides.map(s => {
+           const atMax = selectedSides.length >= MAX_SIDES && !selectedSides.includes(s.id);
+            return (
+              <label
+                key={s.id}
+                className={`side-option ${selectedSides.includes(s.id) ? "active" : ""}`}
+                aria-disabled={atMax}
+              >
                 <input
                   type="checkbox"
                   checked={selectedSides.includes(s.id)}
-                  onChange={() => toggleSide(s.id)}
+                 onChange={() => toggleSide(s.id)}
+                 disabled={atMax}
                 />
                 {s.img ? <img src={s.img} alt={s.title} /> : <div className="side-thumb-fallback" />}
                 <span>{s.title}</span>
               </label>
-            ))}
-          </div>
+            );
+          })}
+        </div>
         </div>
 
         <div className="builder-group">
