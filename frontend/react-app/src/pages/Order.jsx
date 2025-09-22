@@ -201,7 +201,8 @@ export default function Order() {
         const sds = (menu.sides || []).map(s => ({ id: s.id, title: s.title, img: s.imageUrl || "" }));
 
         // load next market (API). If 404, fallback to weekly schedule
-        const mRes = await fetch("/api/markets/next");
+        const mRes = await fetch("/api/markets/next-open");
+
         let mkt = null;
         if (mRes.ok) {
           const m = await mRes.json();
@@ -291,7 +292,7 @@ export default function Order() {
           <div className="container center">
             <h1 className="order-hero-title">Order</h1>
             <p className="order-hero-subtitle">
-              Online ordering is closed. See <a href="/locations">Locations</a>.
+              Online ordering is currently closed. Please try again later. See <a href="/locations">Locations</a>.
             </p>
           </div>
         </section>

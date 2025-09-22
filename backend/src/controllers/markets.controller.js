@@ -50,3 +50,18 @@ export async function getNextMarket(req, res) {
     res.status(500).json({ error: "Failed to compute next market" });
   }
 }
+
+export function nextOccurrenceFromTemplate(m, now = new Date()) {
+  // m: { day_of_week, start_hhmm, end_hhmm, id, name }
+  const d = new Date(now);
+  const delta = (m.day_of_week - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + delta);
+  let start = setTime(d, m.start_hhmm);
+  let end   = setTime(d, m.end_hhmm);
+  if (delta === 0 && end <= now) {         // today already passed -> next week
+    d.setDate(d.getDate() + 7);
+    start = setTime(d, m.start_hhmm);
+    end   = setTime(d, m.end_hhmm);
+  }
+  return { start, end };
+}
