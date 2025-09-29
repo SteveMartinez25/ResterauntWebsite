@@ -6,13 +6,12 @@ export async function getMenu(req, res) {
       `SELECT id, title, type, price_cents AS "priceCents",
               image_url AS "imageUrl", description AS "desc"
          FROM menu_items
-        WHERE is_active = true
+        WHERE active = true
         ORDER BY type, title`
     );
     const { rows: sides } = await query(
       `SELECT id, title, image_url AS "imageUrl"
          FROM sides
-        WHERE is_active = true
         ORDER BY title`
     );
     res.json({ items, sides });
