@@ -10,6 +10,6 @@ router.get("/health", (req, res) => res.json({ ok: true }));
 
 router.use("/menu", menuRoutes);        // → /api/menu
 router.use("/markets", marketsRoutes);  // → /api/markets/...
-router.use("/checkout", paymentsRouter);  // /api/checkout/intent
+router.use("/payments", paymentsRouter);  // /api/payments/intent
 
 export default router;
