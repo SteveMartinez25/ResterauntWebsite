@@ -11,6 +11,7 @@ import Locations from "./pages/Locations.jsx";
 import About from "./pages/About.jsx";
 import Order from "./pages/Order.jsx";
 import Checkout from "./pages/Checkout.jsx";
+import Confirm from "./pages/Confirm.jsx";
 import OrderConfirmation from "./pages/OrderConfirmation.jsx";
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/order" element={<Order />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order/confirmation" element={<OrderConfirmation />} />
+          <Route path="/confirm" element={<Confirm />} />
         </Routes>
         <Footer />
       </BrowserRouter>
