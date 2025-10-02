@@ -145,9 +145,9 @@ async function upsertOrderLines(orderId, compactCart) {
  *   cart:    [{ id, qty, meta }]
  * }
  */
-export async function createPaymentIntent(req, res) {
+export async function createOrUpdatePaymentIntent(req, res) {
   try {
-    const { contact, pickup, tip, cart } = req.body || {};
+    const { contact, pickup, tip, cart, intentId } = req.body || {};
     if (!contact?.name || !contact?.phone || !contact?.email) {
       return res.status(400).json({ error: "Missing contact" });
     }
@@ -158,17 +158,16 @@ export async function createPaymentIntent(req, res) {
       return res.status(400).json({ error: "Cart empty" });
     }
 
-    // All items must be for same market occurrence
-    const mId   = cart[0]?.meta?.marketId;
+    // Same-occurrence guard
+    const mId = cart[0]?.meta?.marketId;
     const mName = cart[0]?.meta?.marketName || "";
     const mDate = cart[0]?.meta?.marketDateISO;
     const same = mId && mDate && cart.every(it => it?.meta?.marketId === mId && it?.meta?.marketDateISO === mDate);
     if (!same) return res.status(400).json({ error: "Mixed markets not allowed" });
 
-    // Server pricing
     const priced = await repriceCart(cart, tip);
 
-    // Compact cart for webhook write (id, qty, sides, notes)
+    // pack cart snapshot for metadata (trim to 450 chars)
     const compactCart = cart.map(it => ({
       id: normalizeItemId(it),
       qty: it.qty,
@@ -176,13 +175,12 @@ export async function createPaymentIntent(req, res) {
       n: it.meta?.kind === "pupusa" ? (it.meta.notes || "") : undefined,
     }));
     let cartJson = JSON.stringify(compactCart);
-    if (cartJson.length > 450) cartJson = cartJson.slice(0, 450); // Stripe metadata has limits
+    if (cartJson.length > 450) cartJson = cartJson.slice(0, 450);
 
-    // Create PaymentIntent (automatic methods enables Apple Pay / Google Pay)
-    const intent = await stripe.paymentIntents.create({
+    const common = {
       amount: priced.amountCents,
       currency: "usd",
-      payment_method_types: ["card"],
+      payment_method_types: ["card"], // Apple Pay / Google Pay still available via card wallets
       receipt_email: contact.email,
       description: `Order for ${mName || mId} on ${new Date(pickup.startISO).toLocaleDateString()}`,
       metadata: {
@@ -198,53 +196,86 @@ export async function createPaymentIntent(req, res) {
         total_cents: String(priced.amountCents),
         cart_json: cartJson,
       },
-    });
+    };
+
+    let intent;
+
+    if (intentId) {
+      // try to update existing PI
+      try {
+        intent = await stripe.paymentIntents.update(intentId, common);
+      } catch (e) {
+        // fallback: create a fresh PI if update not allowed (wrong status, etc.)
+        intent = await stripe.paymentIntents.create(common);
+        // optional: try to cancel the old one if it’s still cancelable
+        try { await stripe.paymentIntents.cancel(intentId); } catch {}
+      }
+    } else {
+      // first time: create
+      intent = await stripe.paymentIntents.create(common);
+    }
 
     return res.json({
-      clientSecret: intent.client_secret,
-      orderId: intent.id, // using PI id as order handle; DB row created in webhook
+      clientSecret: intent.client_secret,   // unchanged when updating the same PI
+      intentId: intent.id,
       subtotalCents: priced.subtotalCents,
       tipCents: priced.tipCents,
       amountCents: priced.amountCents,
     });
   } catch (e) {
-    console.error("createPaymentIntent error:", e);
+    console.error("createOrUpdatePaymentIntent error:", e);
     res.status(400).json({ error: e.message || "Failed to initialize payment" });
   }
 }
 
-// Keep alias if your routes were importing a different name
-export const createOrUpdateIntent = createPaymentIntent;
-
 /* ---------------------------- Webhook ---------------------------- */
 
+// --- inside backend/src/controllers/payments.controllers.js ---
+
 export async function stripeWebhook(req, res) {
+  // Quick visibility on every webhook hit:
+  const sig = req.headers["stripe-signature"];
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  console.log("[webhook] hit /api/payments/webhook  hasSig?", !!sig, "rawLen", req.body?.length);
+
+  if (!secret) {
+    console.error("[webhook] missing STRIPE_WEBHOOK_SECRET");
+    return res.status(500).send("Webhook secret not set");
+  }
+
+  let event;
   try {
-    const sig = req.headers["stripe-signature"];
-    const secret = process.env.STRIPE_WEBHOOK_SECRET;
-    if (!secret) return res.status(500).send("Webhook secret not set");
+    event = stripe.webhooks.constructEvent(req.body, sig, secret);
+  } catch (err) {
+    console.error("[webhook] constructEvent failed:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
 
-    // IMPORTANT: server.js must use express.raw({ type: 'application/json' }) on this route
-    const event = stripe.webhooks.constructEvent(req.body, sig, secret);
+  console.log("[webhook] event.type:", event.type);
 
-    if (event.type === "payment_intent.succeeded") {
-      const pi = event.data.object;
-      const md = pi.metadata || {};
+  if (event.type === "payment_intent.succeeded") {
+    const pi = event.data.object; // Stripe.PaymentIntent
+    const md = pi.metadata || {};
 
-      const contactName  = md.customer_name || "";
-      const contactEmail = pi.receipt_email || md.customer_email || "";
-      const contactPhone = md.customer_phone || "";
+    // Pull contact + market info from metadata
+    const contactName  = md.customer_name || "";
+    const contactEmail = pi.receipt_email || md.customer_email || "";
+    const contactPhone = md.customer_phone || "";
 
-      const marketId   = md.market_id || null;
-      const marketName = md.market_name || null;
-      const marketDate = md.market_date_iso || null;
-      const pickupSlot = md.pickup_slot_iso || null;
+    const marketId   = md.market_id   || null;
+    const marketName = md.market_name || null;
+    const marketDate = md.market_date_iso || null;
+    const pickupSlot = md.pickup_slot_iso || null;
 
-      const tipCents      = Number(md.tip_cents || 0);
-      const subtotalCents = Number(md.subtotal_cents || 0);
-      const totalCents    = Number(md.total_cents || (pi.amount_received || 0));
+    const tipCents      = Number(md.tip_cents      || 0);
+    const subtotalCents = Number(md.subtotal_cents || 0);
+    const totalCents    = Number(md.total_cents    || (pi.amount_received || 0));
 
-      // Idempotent upsert by PI id
+    console.log("[webhook] PI:", pi.id, "status:", pi.status, "amount_received:", pi.amount_received);
+
+    try {
+      // Upsert order by PI id (idempotent)
       const { rows: existing } = await query(
         `SELECT id FROM orders WHERE stripe_payment_intent_id = $1`,
         [pi.id]
@@ -255,26 +286,35 @@ export async function stripeWebhook(req, res) {
         orderId = existing[0].id;
         await query(
           `UPDATE orders
-              SET payment_status = $2,
-                  order_status   = 'PAID',
-                  customer_name  = $3,
-                  customer_email = $4,
-                  customer_phone = $5,
-                  tip_cents      = $6,
-                  subtotal_cents = $7,
-                  total_cents    = $8
-            WHERE stripe_payment_intent_id = $1`,
+             SET payment_status = $2,
+                 order_status   = 'PAID',
+                 customer_name  = $3,
+                 customer_email = $4,
+                 customer_phone = $5,
+                 market_id      = $6,
+                 market_name    = $7,
+                 market_date    = $8::timestamptz,
+                 pickup_slot    = $9::timestamptz,
+                 tip_cents      = $10,
+                 subtotal_cents = $11,
+                 total_cents    = $12
+           WHERE stripe_payment_intent_id = $1`,
           [
             pi.id,
             String(pi.status || "succeeded"),
             contactName,
             contactEmail,
             contactPhone,
+            marketId,
+            marketName,
+            marketDate,
+            pickupSlot,
             tipCents,
             subtotalCents,
             totalCents,
           ]
         );
+        console.log("🟡 updated order:", orderId, "for PI:", pi.id);
       } else {
         const ins = await query(
           `INSERT INTO orders
@@ -284,7 +324,8 @@ export async function stripeWebhook(req, res) {
               tip_cents, subtotal_cents, total_cents,
               order_status, payment_status)
            VALUES
-             ($1,$2,$3,$4,$5,$6,$7::timestamptz,$8::timestamptz,$9,$10,$11,'PAID',$12)
+             ($1,$2,$3,$4,$5,$6,$7::timestamptz,$8::timestamptz,
+              $9,$10,$11,'PAID',$12)
            RETURNING id`,
           [
             pi.id,
@@ -302,21 +343,27 @@ export async function stripeWebhook(req, res) {
           ]
         );
         orderId = ins.rows[0].id;
+        console.log("🟢 inserted order:", orderId, "for PI:", pi.id);
       }
 
-      // Rebuild compact cart and write lines+sides
+      // Now rebuild cart snapshot and write order items + sides
       let compactCart = [];
       try { compactCart = JSON.parse(md.cart_json || "[]"); } catch { compactCart = []; }
+
       if (orderId && compactCart.length) {
         await upsertOrderLines(orderId, compactCart);
+        console.log("🟢 wrote items+sides for order:", orderId, "PI:", pi.id);
+      } else {
+        console.log("ℹ️ no compactCart in metadata for PI:", pi.id);
       }
 
-      console.log("✅ Order recorded with lines for PI:", pi.id);
+      return res.json({ received: true });
+    } catch (err) {
+      console.error("🔥 DB write error in webhook for PI", pi.id, ":", err);
+      return res.status(500).send("DB error in webhook");
     }
-
-    res.json({ received: true });
-  } catch (err) {
-    console.error("Webhook error:", err.message);
-    res.status(400).send(`Webhook Error: ${err.message}`);
   }
+
+  // Not a type we use
+  return res.json({ received: true });
 }

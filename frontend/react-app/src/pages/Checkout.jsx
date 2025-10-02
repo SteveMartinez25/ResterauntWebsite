@@ -51,8 +51,8 @@ function useCartMarket(items) {
   };
 }
 
-/* ── Stripe sub-component (hooks live inside <Elements>) ───────────────────── */
-function StripePaymentBox({ orderId, total, onPaid }) {
+/* ── Stripe sub-component (runs inside <Elements>) ─────────────────────────── */
+function StripePaymentBox({ clientSecret, intentId, total, onPaid }) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -66,16 +66,20 @@ function StripePaymentBox({ orderId, total, onPaid }) {
 
     const { error } = await stripe.confirmPayment({
       elements,
-      redirect: "if_required", // stays on page unless 3DS needed
-      confirmParams: { return_url: window.location.origin + `/confirm?order=${orderId}` },
+      redirect: "if_required", // stays on page unless 3DS is required
+      confirmParams: { return_url: window.location.origin + "/confirm" },
     });
 
     if (error) {
       setError(error.message || "Payment failed");
       setSubmitting(false);
-    } else {
-      onPaid?.(orderId);
+      return;
     }
+
+    // Get the ACTUAL PI that was confirmed for this clientSecret
+    const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+    const piId = paymentIntent?.id || intentId;
+    onPaid?.(piId);
   }
 
   return (
@@ -99,7 +103,7 @@ function PaymentPanel({
   onPaid
 }) {
   const [clientSecret, setClientSecret] = useState(null);
-  const [orderId, setOrderId] = useState(null);
+  const [intentId, setIntentId] = useState(null);
   const [intentBusy, setIntentBusy] = useState(false);
   const [intentErr, setIntentErr] = useState("");
 
@@ -112,28 +116,30 @@ function PaymentPanel({
                   contact.name.trim().length >= 2 && phoneOk(contact.phone) &&
                   emailOk(contact.email) && !!slotISO;
 
-  // Avoid spamming the server with identical payloads
+  // Avoid spamming identical payloads; include intentId so server can update the same PI
   const signature = JSON.stringify({
     items: items.map(it => ({ id: it.id, qty: it.qty, meta: it.meta })),
     tipChoice, tipCustomDollar,
     slotISO,
     contact,
+    intentId,
   });
   const lastSigRef = useRef("");
 
   useEffect(() => {
     let cancelled = false;
-    async function initIntent() {
-      if (!canInit) { setClientSecret(null); setOrderId(null); return; }
-      if (signature === lastSigRef.current) return;
-      lastSigRef.current = signature;
+    if (!canInit) { setClientSecret(null); setIntentId(null); return; }
+    if (signature === lastSigRef.current) return;
+    lastSigRef.current = signature;
 
+    async function upsertIntent() {
       setIntentBusy(true); setIntentErr("");
 
       const startISO = slotISO;
       const endISO = new Date(new Date(slotISO).getTime() + 15 * 60 * 1000).toISOString();
 
       const payload = {
+        intentId, // may be null first run; server will create or update
         contact,
         pickup: { startISO, endISO },
         tip: tipChoice === "custom"
@@ -155,20 +161,23 @@ function PaymentPanel({
 
         if (!cancelled) {
           setClientSecret(data.clientSecret);
-          setOrderId(data.orderId);
+          setIntentId(data.intentId);
+          sessionStorage.setItem("last_pi", data.intentId);
         }
       } catch (e) {
         if (!cancelled) {
           setIntentErr(e.message);
           setClientSecret(null);
-          setOrderId(null);
+          setIntentId(null);
         }
       } finally {
         if (!cancelled) setIntentBusy(false);
       }
     }
-    initIntent();
-    return () => { cancelled = true; };
+
+    // small debounce to coalesce fast changes
+    const t = setTimeout(upsertIntent, 250);
+    return () => { cancelled = true; clearTimeout(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canInit, signature]);
 
@@ -264,7 +273,7 @@ function PaymentPanel({
 
       {clientSecret ? (
         <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-          <StripePaymentBox orderId={orderId} total={total} onPaid={onPaid} />
+          <StripePaymentBox clientSecret={clientSecret} intentId={intentId} total={total} onPaid={onPaid} />
         </Elements>
       ) : (
         <div className="card" style={{ padding: 12, opacity: 0.7 }}>
@@ -343,7 +352,7 @@ export default function Checkout() {
             tipCustomDollar={tipCustomDollar}
             setTipCustomDollar={setTipCustomDollar}
             total={total}
-            onPaid={(orderId) => { clear(); window.location.href = `/confirm?order=${orderId}`; }}
+            onPaid={(piId) => { clear(); navigate(`/confirm?pi=${encodeURIComponent(piId)}`); }}
           />
 
           {/* RIGHT: summary */}
