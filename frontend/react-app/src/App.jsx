@@ -13,6 +13,7 @@ import Order from "./pages/Order.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Confirm from "./pages/Confirm.jsx";
 import OrderConfirmation from "./pages/OrderConfirmation.jsx";
+import Admin from "./pages/Admin.jsx";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order/confirmation" element={<OrderConfirmation />} />
           <Route path="/confirm" element={<Confirm />} />
+          <Route path="/admin" element={<Admin />} />
         </Routes>
         <Footer />
       </BrowserRouter>

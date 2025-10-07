@@ -4,6 +4,7 @@ import menuRoutes from "./menu.routes.js";
 import marketsRoutes from "./markets.routes.js";
 import paymentsRouter from "./payments.routes.js";
 import ordersRoutes from "./orders.routes.js";
+import adminRoutes from "./admin.routes.js";
 
 const router = Router();
 
@@ -13,5 +14,6 @@ router.use("/menu", menuRoutes);        // → /api/menu
 router.use("/markets", marketsRoutes);  // → /api/markets/...
 router.use("/payments", paymentsRouter);  // /api/payments/intent
 router.use("/orders", ordersRoutes);    // /api/orders
+router.use("/admin", adminRoutes);
 
 export default router;

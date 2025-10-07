@@ -5,6 +5,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 
 import api from "./routes/index.js"; // your main router (JSON-parsed)
 import { webhookRouter as paymentsWebhook } from "./routes/payments.routes.js"; // raw-body router ONLY
@@ -12,10 +13,13 @@ import { webhookRouter as paymentsWebhook } from "./routes/payments.routes.js"; 
 const app = express();
 const PORT = process.env.PORT || 5174;
 
-// CORS / security / logging
-app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true, // 🔑 allow cookies from frontend
+}));
 app.use(helmet());
 app.use(morgan("dev"));
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // 1) Stripe webhook MUST be mounted BEFORE express.json(), using raw body.
 app.use("/api/payments", paymentsWebhook);

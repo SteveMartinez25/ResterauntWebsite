@@ -2,17 +2,10 @@ import { Router } from "express";
 import { query } from "../db.js";
 import { getNextOpenMarket } from "../controllers/marketsOpen.controller.js";
 import { nextOccurrenceFromTemplate } from "../controllers/markets.controller.js";
+import {requireAdmin } from "../middleware/adminAuth.js"
 
 const router = Router();
 const TZ = "America/Los_Angeles";
-
-// Simple header check
-const requireAdmin = (req, res, next) => {
-  if (req.headers["x-admin-key"] !== process.env.ADMIN_KEY) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  next();
-};
 
 // helper: LA local date "YYYY-MM-DD" from a Date/ISO
 function localDateYYYYMMDD(dLike, tz = TZ) {
@@ -86,8 +79,7 @@ router.get("/admin/status", requireAdmin, async (_req, res) => {
          to_char(start_time, 'HH24:MI') AS start_hhmm,
          to_char(end_time,   'HH24:MI') AS end_hhmm
        FROM public.markets
-       WHERE active = true
-       ORDER BY day_of_week`
+       ORDER BY day_of_week, name`
     );
 
     const now = new Date();
